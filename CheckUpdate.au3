@@ -20,6 +20,7 @@ Global	$cPIDFileExt	; Расширение pid-файла
 Global	$sComConnectorObj	; Имя COM-объекта 
 Global	$v8ComConnector, $connDB
 Global	$sEmailTo, $sEmailCc ; Адреса для доставки сообщений
+Global	$sHTMLBodyForEmail	; HTML-документ для будущего сообщения
 
 ; Чтение настроек из ini-файла и разбора параметров командной строки
 Func ReadParamsFromIni()
@@ -215,36 +216,41 @@ EndFunc
 ; Устанавлиает подключение к базе данных
 Func ConnectToDataBase()
 	
+	Local $mv8exe
+
 	AddToLog("Попытка установить подключение с базой данных")
 	
-	If IsObj($v8ComConnector) Then
+	If IsObj($v8ComConnector) = 1 Then
 		AddToLog("Объект COMConnector уже создан в памяти. Уничтожаю существующий объект.")
 		DisconnectFromDatabase()
 	EndIf
 
-	AddToLog("Попытка создать объект COMConnector")
+	AddToLog("Создается новый объект COMConnector")
 	$v8ComConnector = ObjCreate($sComConnectorObj)
 	
-	If @error Then
+	If IsObj($v8ComConnector) = 0 Then
 		
 		AddToLog("Ошибка при создании COM-объекта " & $sComConnectorObj)
 		Return False
 
 	EndIf
 	
-	AddToLog("Попытка подключения к ИБ");
+	AddToLog("Подключение к ИБ")
 	
-	$connDB	=	$v8ComConnector.Connect($sIBConn);
+	$connDB	=	$v8ComConnector.Connect($sIBConn)
 
-	If Not IsObj($connDB) Then
+	If IsObj($connDB) = 0 Then
 		
 		AddToLog("При подключении к ИБ произошла ошибка")
-		AddToLog("Скрипт завершает работу из-за ошибки соединения с ИБ")
-		; Может вставить отправку alarm'a? Например на SMS или email
 		Return False
 		
 	Else
+		
 		AddToLog("Подключение к ИБ установлено")
+		; Выяснить путь к исполняемому файлу текущей версии Платформы
+		$mv8exe	= $connDB.BinDir() & "1cv8.exe"
+		AddToLog("Путь к v8exe: " & $mv8exe)
+
 		Return True
 
 	EndIf
@@ -268,7 +274,7 @@ Func DisconnectFromDatabase()
 
 EndFunc
 
-; Функция пытается применить изменения (динамиские)
+; Функция формирует строку для запуска Конфигуратора и запускает его
 Func RunDesignerForUpdate()
 
 	;v8exe & " DESIGNER /F" & $sIBPath  & " /N" & IBAdminName & " /P" & IBAdminPwd & " /WA- /UpdateDBCfg /Out" & $ServiceFileName & " -NoTruncate /DisableStartupMessages"
@@ -329,29 +335,74 @@ Func RunDesignerForUpdate()
 		
 EndFunc
 
-; Функция пытается применить изменения с реструктуризацией
-Func RunDesignerForNonDynamicUpdate()
+; Функция пытается применить изменения динамически
+Func RunDynamicUpdate()
 	
 	Local $aConnParams[5]
-	Local $mHTMLbr	
 
-	$mHTMLbr	= "<br>"
+	$aConnParams = SplitConnectionString($sIBConn)
 
-	; Попытаться применить изменения
 	if Not RunDesignerForUpdate() Then
 		; Если не удалось применить, Написать сообщение о необходимости применить изменения
-		$aConnParams= SplitConnectionString($sIBConn)
 		; Формируется сообщение об ошибке, которое будет отправлено на Email
-		$sTextToEml	= "Не удалось применить изменения динамически."
-		$sTextToEml	= $sTextToEml & $mHTMLbr & "База данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")"
-		$sTextToEml	= $sTextToEml & $mHTMLbr & "Для принятия изменений требуется реструктуризация"
-		If Not PrepareAndSendEmail($sTextToEml) Then
+		AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
+		AddHTMLBodyForEmail("База данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")" )
+
+		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
 			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
 		EndIf
 		
 		Return False
+
 	Else
+		; Успешно применили изменения. Напишем об этом письмо
+		; Формируется сообщение об успешном принятии изменений, которое будет отправлено на Email
+		AddHTMLBodyForEmail("Выполнено динамическое обновление базы данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")." )
+	
+		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
+			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
+		EndIf
+
 		Return True
+
+	EndIf
+	
+EndFunc
+
+; Функция пытается применить изменения с реструктуризацией
+Func RunNonDynamicUpdate()
+	
+	Local $aConnParams[5]
+
+	$aConnParams = SplitConnectionString($sIBConn)
+
+	; Попытаться применить изменения
+	; Сначала получить список соединений с ИБ
+	; Отключить все "спящие" сеансы
+
+	if Not RunDesignerForUpdate() Then
+		; Если не удалось применить, Написать сообщение о необходимости применить изменения
+		; Формируется сообщение об ошибке, которое будет отправлено на Email
+		AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
+		AddHTMLBodyForEmail("База данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")" )
+		AddHTMLBodyForEmail("Для принятия изменений требуется реструктуризация")
+		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
+			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
+		EndIf
+		
+		Return False
+
+	Else
+		; Успешно применили изменения. Напишем об этом письмо
+		; Формируется сообщение об успешном принятии изменений, которое будет отправлено на Email
+		AddHTMLBodyForEmail("Выполнено обновление базы данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")." )
+		AddHTMLBodyForEmail("Операция выполнена с реструктуризацией")
+		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
+			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
+		EndIf
+
+		Return True
+
 	EndIf
 	
 	; Отключить всех пользователей???
@@ -379,7 +430,8 @@ Func CheckUpdate()
 			AddToLog("Конфигурация ИБ изменена динамически")
 			AddToLog("Попытка применения изменений")
 			DisconnectFromDatabase()
-			RunDesignerForUpdate()
+			
+			RunDynamicUpdate()
 
 		Else
 
@@ -387,7 +439,7 @@ Func CheckUpdate()
 			AddToLog("Попытка применения изменений")
 			DisconnectFromDatabase()
 			
-			If Not RunDesignerForNonDynamicUpdate() Then
+			If Not RunNonDynamicUpdate() Then
 				ExitLoop
 			EndIf
 
@@ -486,13 +538,26 @@ Func PrepareAndSendEmail($EmailMsgTxt)
 
 	$mEmlParam[0] = $sEmailTo
 	$mEmlParam[1] = $sEmailCc
-	$mEmlParam[2] = "Автоматическое уведомление. Требуется принятие изменений в ИБ"
+	$mEmlParam[2] = "Автоматическое уведомление об операции над базой данных"
 	$mEmlParam[3] = $EmailMsgTxt
 
 	SendEmail($mEmlParam)
 
 	Return True
 EndFunc
+
+Func AddHTMLBodyForEmail($PlainText)
+	Local $mHTMLbr	
+
+	$mHTMLbr	= "<br>"
+	If StringLen($sHTMLBodyForEmail) = 0 Then
+		$sHTMLBodyForEmail	= $PlainText & $mHTMLbr
+	Else
+		$sHTMLBodyForEmail	= $sHTMLBodyForEmail & $PlainText & $mHTMLbr
+	EndIf
+	
+EndFunc
+
 ; Основная программа
 ; *****************************************************************************
 
