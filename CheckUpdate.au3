@@ -274,6 +274,9 @@ Func DisconnectFromDatabase()
 
 EndFunc
 
+; TODO:
+; Подключение к 
+
 ; Функция формирует строку для запуска Конфигуратора и запускает его
 Func RunDesignerForUpdate()
 
@@ -382,6 +385,8 @@ Func RunNonDynamicUpdate()
 
 	if Not RunDesignerForUpdate() Then
 		; Если не удалось применить, Написать сообщение о необходимости применить изменения
+		AddToLog("Не удалось применить изменения динамически.")
+		AddToLog("Для принятия изменений требуется реструктуризация")
 		; Формируется сообщение об ошибке, которое будет отправлено на Email
 		AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
 		AddHTMLBodyForEmail("База данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")" )
@@ -421,21 +426,19 @@ Func CheckUpdate()
 	AddToLog("Проверка необходимости принять изменения")
 	$TryCount = 0 
 
-	While $connDB.ConfigurationChanged() AND $TryCount <= 3 
+	While ($connDB.ConfigurationChanged() = True) AND $TryCount <= 3 
 		
 		$TryCount = $TryCount + 1
 
 		if $connDB.DataBaseConfigurationChangedDynamically() Then
 
 			AddToLog("Конфигурация ИБ изменена динамически")
-			AddToLog("Попытка применения изменений")
+			AddToLog("Ппотребуется переподключение к базе данных")
 			DisconnectFromDatabase()
-			
-			RunDynamicUpdate()
 
 		Else
 
-			AddToLog("Конфигурация ИБ изменена не динамически, требуется реструктуризация")
+			AddToLog("Конфигурация ИБ изменена, требуется применений изменений")
 			AddToLog("Попытка применения изменений")
 			DisconnectFromDatabase()
 			
