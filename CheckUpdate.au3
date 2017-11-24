@@ -13,6 +13,7 @@
 
 Global	$sLogfileName	; Имя log-файла
 Global	$sIBConn		; Строка подключения к ИБ
+Global	$IBConnectionParam	; Параметры подключения к базе данных
 Global	$sV8exePath		; Путь к исполняемому файлу 1cv8.exe
 Global	$sArcLogfileName; Имя архива log-файла
 Global	$iLogMaxSize	; Максимальный размер log-файла
@@ -38,6 +39,10 @@ Func ReadParamsFromIni()
 	$sEmailTo			= IniRead($sIniFileName,	"EXCHANGE", "EmailTo", "")
 	$sEmailCc			= IniRead($sIniFileName,	"EXCHANGE", "EmailCc", "")
 
+	; Если успешно прочитали строку соединения, можно ее разобрать на составные части
+	If StringLen($sIBConn) > 0 Then
+		$IBConnectionParam = SplitConnectionString($sIBConn)
+	EndIf
 	; Чтение параметров командной строки
 	; Параметры, переданные в командной строке имеют приоритет над параметрами ini-файла
 	; $iParamCount	= $CmdLine[0]
@@ -208,6 +213,12 @@ Func SplitConnectionString($sIBConn)
 	Return $aResult
 	
 EndFunc
+
+;
+; Функции для работы с кластером
+; *****************************************************************************
+
+
 
 ;
 ; Функции для работы с базой данных
