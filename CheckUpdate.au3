@@ -386,11 +386,12 @@ Func RunNonDynamicUpdate()
 	if Not RunDesignerForUpdate() Then
 		; Если не удалось применить, Написать сообщение о необходимости применить изменения
 		AddToLog("Не удалось применить изменения динамически.")
-		AddToLog("Для принятия изменений требуется реструктуризация")
+		AddToLog("Для принятия изменений требуется реструктуризация или монопольный доступ")
 		; Формируется сообщение об ошибке, которое будет отправлено на Email
 		AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
 		AddHTMLBodyForEmail("База данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")" )
-		AddHTMLBodyForEmail("Для принятия изменений требуется реструктуризация")
+		AddHTMLBodyForEmail("Для принятия изменений требуется монопольный доступ к базе")
+		
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
 			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
 		EndIf
@@ -432,8 +433,8 @@ Func CheckUpdate()
 
 		if $connDB.DataBaseConfigurationChangedDynamically() Then
 
-			AddToLog("Конфигурация ИБ изменена динамически")
-			AddToLog("Ппотребуется переподключение к базе данных")
+			AddToLog("С момента подключения, Конфигурация ИБ была изменена динамически")
+			AddToLog("Требуется переподключение к базе данных (перезапуск сеанса)")
 			DisconnectFromDatabase()
 
 		Else
