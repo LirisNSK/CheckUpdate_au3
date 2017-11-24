@@ -292,7 +292,6 @@ EndFunc
 Func RunDesignerForUpdate()
 
 	;v8exe & " DESIGNER /F" & $sIBPath  & " /N" & IBAdminName & " /P" & IBAdminPwd & " /WA- /UpdateDBCfg /Out" & $ServiceFileName & " -NoTruncate /DisableStartupMessages"
-	Local $aConnParams[5]
 	Local $sUpdCmdLine, $sRunClientCmdLine
 	Local $sIBPath, $sIBAdmin, $sIBAdminPwd, $ServiceFileName
 	Local $ProcResult
@@ -300,14 +299,13 @@ Func RunDesignerForUpdate()
 	$sServiceFileName	=	@ScriptDir & "\" & GetCurrentDateString() & "_upd_result.txt" 
 	
 	; Получаю параметры подключения из строки подключения
-	$aConnParams= SplitConnectionString($sIBConn)
-	$sIBAdmin	=	$aConnParams[1]
-	$sIBAdminPwd=	$aConnParams[2]
-	$sIBPath	=	$aConnParams[3]
-	$sIBSrvr	=	$aConnParams[4]
+	$sIBAdmin	=	$IBConnectionParam[1]
+	$sIBAdminPwd=	$IBConnectionParam[2]
+	$sIBPath	=	$IBConnectionParam[3]
+	$sIBSrvr	=	$IBConnectionParam[4]
 	
 	; Формирование строки для запуска Конфигуратора
-	If $aConnParams[0] = 0 Then
+	If $IBConnectionParam[0] = 0 Then
 		$sUpdCmdLine	=	$sV8exePath & " DESIGNER /F" & $sIBPath  & " /N" & $sIBAdminPwd & " /P" & $sIBAdminPwd 
 	Else
 		$sUpdCmdLine	=	$sV8exePath & " DESIGNER /S" & $sIBSrvr & "\" & $sIBPath  & " /N" & $sIBAdminPwd & " /P" & $sIBAdminPwd 
@@ -352,15 +350,11 @@ EndFunc
 ; Функция пытается применить изменения динамически
 Func RunDynamicUpdate()
 	
-	Local $aConnParams[5]
-
-	$aConnParams = SplitConnectionString($sIBConn)
-
 	if Not RunDesignerForUpdate() Then
 		; Если не удалось применить, Написать сообщение о необходимости применить изменения
 		; Формируется сообщение об ошибке, которое будет отправлено на Email
 		AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
-		AddHTMLBodyForEmail("База данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")" )
+		AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
 
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
 			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
@@ -371,7 +365,7 @@ Func RunDynamicUpdate()
 	Else
 		; Успешно применили изменения. Напишем об этом письмо
 		; Формируется сообщение об успешном принятии изменений, которое будет отправлено на Email
-		AddHTMLBodyForEmail("Выполнено динамическое обновление базы данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")." )
+		AddHTMLBodyForEmail("Выполнено динамическое обновление базы данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")." )
 	
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
 			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
@@ -386,10 +380,6 @@ EndFunc
 ; Функция пытается применить изменения с реструктуризацией
 Func RunNonDynamicUpdate()
 	
-	Local $aConnParams[5]
-
-	$aConnParams = SplitConnectionString($sIBConn)
-
 	; Попытаться применить изменения
 	; Сначала получить список соединений с ИБ
 	; Отключить все "спящие" сеансы
@@ -400,7 +390,7 @@ Func RunNonDynamicUpdate()
 		AddToLog("Для принятия изменений требуется реструктуризация или монопольный доступ")
 		; Формируется сообщение об ошибке, которое будет отправлено на Email
 		AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
-		AddHTMLBodyForEmail("База данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")" )
+		AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
 		AddHTMLBodyForEmail("Для принятия изменений требуется монопольный доступ к базе")
 		
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
@@ -412,7 +402,7 @@ Func RunNonDynamicUpdate()
 	Else
 		; Успешно применили изменения. Напишем об этом письмо
 		; Формируется сообщение об успешном принятии изменений, которое будет отправлено на Email
-		AddHTMLBodyForEmail("Выполнено обновление базы данных " & $aConnParams[3] & " (" & $aConnParams[4] & ")." )
+		AddHTMLBodyForEmail("Выполнено обновление базы данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")." )
 		AddHTMLBodyForEmail("Операция выполнена с реструктуризацией")
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
 			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
