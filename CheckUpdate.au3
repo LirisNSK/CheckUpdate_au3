@@ -225,6 +225,7 @@ EndFunc
 ; Функции для работы с базой данных
 ; *****************************************************************************
 
+; Создает COMConnector
 Func CreateCOMConnector()
 
 	If IsObj($v8ComConnector) = 1 Then
@@ -242,6 +243,7 @@ Func CreateCOMConnector()
 
 EndFunc
 
+; Уничтожает COMConnector
 Func DestroyCOMConnector()
 
 	AddToLog("Уничтожается объект COMConnector")
@@ -251,6 +253,39 @@ Func DestroyCOMConnector()
 		AddToLog("Ожидание освобождения памяти от объекта COMConnector")
 	WEnd
 
+	Return True
+
+EndFunc
+
+; Создает ServerAgentConnection
+Func ConnectToServerAgent()
+
+	If IsObj($g_IServerAgentConnection) = 1 Then
+		Return True
+	Else
+		
+		CreateCOMConnector()
+		AddToLog("Подключение к агенту сервера")
+		$g_IServerAgentConnection = $v8ComConnector.ConnectAgent($IBConnectionParam[4])
+
+		If IsObj($g_IServerAgentConnection) = 0 Then
+			AddToLog("Ошибка при подключении к агенту сервера" )
+			Return False
+		EndIf
+	EndIf
+	
+EndFunc
+
+; Закрывает соединение с агентом сервера
+Func DisconnectFromServerAgent()
+
+	AddToLog("Закрывается соединение с агентом сервера")
+	While IsObj($g_IServerAgentConnection)
+		$g_IServerAgentConnection	= 0
+		Sleep(1000)
+		AddToLog("Ожидание закрытия соединения с агентом сервера")
+	WEnd
+	
 	Return True
 
 EndFunc
@@ -301,9 +336,6 @@ Func DisconnectFromDatabase()
 	Return True
 
 EndFunc
-
-; TODO:
-; Подключение к 
 
 ; Функция формирует строку для запуска Конфигуратора и запускает его
 Func RunDesignerForUpdate()
