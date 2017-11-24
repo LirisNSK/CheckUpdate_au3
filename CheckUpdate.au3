@@ -20,6 +20,7 @@ Global	$iLogMaxSize	; Максимальный размер log-файла
 Global	$cPIDFileExt	; Расширение pid-файла
 Global	$sComConnectorObj	; Имя COM-объекта 
 Global	$v8ComConnector, $connDB
+Global	$g_IServerAgentConnection	; Соединение с агентом сервера
 Global	$sEmailTo, $sEmailCc ; Адреса для доставки сообщений
 Global	$sHTMLBodyForEmail	; HTML-документ для будущего сообщения
 
@@ -224,6 +225,36 @@ EndFunc
 ; Функции для работы с базой данных
 ; *****************************************************************************
 
+Func CreateCOMConnector()
+
+	If IsObj($v8ComConnector) = 1 Then
+		Return True
+	Else
+		AddToLog("Создается новый объект COMConnector")
+		
+		$v8ComConnector = ObjCreate($sComConnectorObj)
+
+		If IsObj($v8ComConnector) = 0 Then
+			AddToLog("Ошибка при создании COM-объекта " & $sComConnectorObj)
+			Return False
+		EndIf
+	EndIf
+
+EndFunc
+
+Func DestroyCOMConnector()
+
+	AddToLog("Уничтожается объект COMConnector")
+	While IsObj($v8ComConnector)
+		$v8ComConnector	= 0
+		Sleep(1000)
+		AddToLog("Ожидание освобождения памяти от объекта COMConnector")
+	WEnd
+
+	Return True
+
+EndFunc
+
 ; Устанавлиает подключение к базе данных
 Func ConnectToDataBase()
 	
@@ -231,39 +262,28 @@ Func ConnectToDataBase()
 
 	AddToLog("Попытка установить подключение с базой данных")
 	
-	If IsObj($v8ComConnector) = 1 Then
-		AddToLog("Объект COMConnector уже создан в памяти. Уничтожаю существующий объект.")
-		DisconnectFromDatabase()
-	EndIf
-
-	AddToLog("Создается новый объект COMConnector")
-	$v8ComConnector = ObjCreate($sComConnectorObj)
-	
-	If IsObj($v8ComConnector) = 0 Then
-		
-		AddToLog("Ошибка при создании COM-объекта " & $sComConnectorObj)
-		Return False
-
-	EndIf
-	
-	AddToLog("Подключение к ИБ")
-	
-	$connDB	=	$v8ComConnector.Connect($sIBConn)
-
-	If IsObj($connDB) = 0 Then
-		
-		AddToLog("При подключении к ИБ произошла ошибка")
-		Return False
-		
-	Else
-		
-		AddToLog("Подключение к ИБ установлено")
-		; Выяснить путь к исполняемому файлу текущей версии Платформы
-		$mv8exe	= $connDB.BinDir() & "1cv8.exe"
-		AddToLog("Путь к v8exe: " & $mv8exe)
-
+	If IsObj($connDB) = 1 Then
 		Return True
+	Else
 
+		If Not CreateCOMConnector() Then
+			Return False
+		EndIf
+
+		AddToLog("Подключение к ИБ")
+		$connDB	=	$v8ComConnector.Connect($sIBConn)
+
+		If IsObj($connDB) = 0 Then
+			AddToLog("При подключении к ИБ произошла ошибка")
+			Return False
+		Else
+			AddToLog("Подключение к ИБ установлено")
+			; Выяснить путь к исполняемому файлу текущей версии Платформы
+			$mv8exe	= $connDB.BinDir() & "1cv8.exe"
+			AddToLog("Путь к v8exe: " & $mv8exe)
+
+			Return True
+		EndIf
 	EndIf
 
 EndFunc
@@ -271,14 +291,11 @@ EndFunc
 ; Закрывает соединение с базой данных и уничтожает COM-объект
 Func DisconnectFromDatabase()
 
-	AddToLog("Закрывается соединение с базой данных и освобождается COMConnector")
-	While IsObj($connDB) OR IsObj($v8ComConnector)
-		
+	AddToLog("Закрывается соединение с базой данных")
+	While IsObj($connDB)
 		$connDB	= 0
-		$v8ComConnector = 0
 		Sleep(1000)
-		AddToLog("Ожидание освобождения памяти от объектов")
-
+		AddToLog("Ожидание закрытия соединения с базой данных")
 	WEnd
 	
 	Return True
@@ -458,6 +475,7 @@ Func CheckUpdate()
 	WEnd
 
 	DisconnectFromDatabase()
+	DestroyCOMConnector()
 
 EndFunc
 
