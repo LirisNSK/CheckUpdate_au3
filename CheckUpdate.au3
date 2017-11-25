@@ -25,6 +25,7 @@ Global	$g_ClusterInfo	; Кластер серверов
 Global	$g_InfoBaseInfo	; Информация об объекте ИБ в кластере серверов
 Global	$sEmailTo, $sEmailCc ; Адреса для доставки сообщений
 Global	$sHTMLBodyForEmail	; HTML-документ для будущего сообщения
+Global	$g_ForceUpdate	; Булево. Истина - отключить пользователей
 
 ; Чтение настроек из ini-файла и разбора параметров командной строки
 Func ReadParamsFromIni()
@@ -48,7 +49,14 @@ Func ReadParamsFromIni()
 	EndIf
 	; Чтение параметров командной строки
 	; Параметры, переданные в командной строке имеют приоритет над параметрами ini-файла
-	; $iParamCount	= $CmdLine[0]
+	$iParamCount	= $CmdLine[0]
+	For $iCurrParam = 1 To $iParamCount
+		Select
+			Case StringLower($CmdLine[$iCurrParam]) = StringLower("ForceUpdate")
+				$g_ForceUpdate	= True
+				AddToLog("Задействован ключ ForceUpdate")
+		EndSelect
+	Next
 
 EndFunc
 
@@ -221,46 +229,6 @@ EndFunc
 ; Функции для работы с кластером
 ; *****************************************************************************
 
-
-
-;
-; Функции для работы с базой данных
-; *****************************************************************************
-
-; Создает COMConnector
-Func CreateCOMConnector()
-
-	If IsObj($v8ComConnector) = 1 Then
-		Return True
-	Else
-		AddToLog("Создается новый объект COMConnector")
-		
-		$v8ComConnector = ObjCreate($sComConnectorObj)
-
-		If IsObj($v8ComConnector) = 0 Then
-			AddToLog("Ошибка при создании COM-объекта " & $sComConnectorObj)
-			Return False
-		Else
-			Return True
-		EndIf
-	EndIf
-
-EndFunc
-
-; Уничтожает COMConnector
-Func DestroyCOMConnector()
-
-	AddToLog("Уничтожается объект COMConnector")
-	While IsObj($v8ComConnector)
-		$v8ComConnector	= 0
-		Sleep(1000)
-		AddToLog("Ожидание освобождения памяти от объекта COMConnector")
-	WEnd
-
-	Return True
-
-EndFunc
-
 ; Создает ServerAgentConnection
 Func ConnectToServerAgent()
 
@@ -372,6 +340,44 @@ Func CheckIBSessionsAndTryTerminate()
 	Next
 	
 	DisconnectFromServerAgent()
+	Return True
+
+EndFunc
+
+;
+; Функции для работы с базой данных
+; *****************************************************************************
+
+; Создает COMConnector
+Func CreateCOMConnector()
+
+	If IsObj($v8ComConnector) = 1 Then
+		Return True
+	Else
+		AddToLog("Создается новый объект COMConnector")
+		
+		$v8ComConnector = ObjCreate($sComConnectorObj)
+
+		If IsObj($v8ComConnector) = 0 Then
+			AddToLog("Ошибка при создании COM-объекта " & $sComConnectorObj)
+			Return False
+		Else
+			Return True
+		EndIf
+	EndIf
+
+EndFunc
+
+; Уничтожает COMConnector
+Func DestroyCOMConnector()
+
+	AddToLog("Уничтожается объект COMConnector")
+	While IsObj($v8ComConnector)
+		$v8ComConnector	= 0
+		Sleep(1000)
+		AddToLog("Ожидание освобождения памяти от объекта COMConnector")
+	WEnd
+
 	Return True
 
 EndFunc
@@ -516,17 +522,19 @@ EndFunc
 Func RunNonDynamicUpdate()
 	
 	; Попытаться применить изменения
-	; Сначала получить список соединений с ИБ
-	; Отключить все "спящие" сеансы
 
 	if Not RunDesignerForUpdate() Then
 		; Если не удалось применить, Написать сообщение о необходимости применить изменения
 		AddToLog("Не удалось применить изменения динамически.")
 		AddToLog("Для принятия изменений требуется реструктуризация или монопольный доступ")
-		; Формируется сообщение об ошибке, которое будет отправлено на Email
-		AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
-		AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
-		AddHTMLBodyForEmail("Для принятия изменений требуется монопольный доступ к базе")
+		If $g_ForceUpdate Then
+			AddToLog("Выполняется попытка отключить сеансы")
+			Return CheckIBSessionsAndTryTerminate()
+		Else
+			AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
+			AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
+			AddHTMLBodyForEmail("Для принятия изменений требуется монопольный доступ к базе")
+		EndIf
 		
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
 			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
@@ -706,8 +714,7 @@ AddToLog("=> Старт обработки")
 If ( CanIContinue() ) Then
 	
 	CreatePIDFile()	
-	;CheckUpdate()
-	CheckIBSessionsAndTryTerminate()
+	CheckUpdate()
 	DeletePIDFile()	
 	AddToLog("<= Обработка завершена");
 	
