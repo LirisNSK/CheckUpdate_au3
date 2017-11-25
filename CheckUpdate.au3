@@ -42,6 +42,7 @@ Func ReadParamsFromIni()
 	$iLogMaxSize		= Int(IniRead($sIniFileName,	"EXCHANGE", "LogMaxSize", 512000))
 	$sEmailTo			= IniRead($sIniFileName,	"EXCHANGE", "EmailTo", "")
 	$sEmailCc			= IniRead($sIniFileName,	"EXCHANGE", "EmailCc", "")
+	$g_ForceUpdate		= False
 
 	; Если успешно прочитали строку соединения, можно ее разобрать на составные части
 	If StringLen($sIBConn) > 0 Then
@@ -529,7 +530,13 @@ Func RunNonDynamicUpdate()
 		AddToLog("Для принятия изменений требуется реструктуризация или монопольный доступ")
 		If $g_ForceUpdate Then
 			AddToLog("Выполняется попытка отключить сеансы")
-			Return CheckIBSessionsAndTryTerminate()
+			If CheckIBSessionsAndTryTerminate() Then
+				Return True
+			Else
+				AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
+				AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
+				AddHTMLBodyForEmail("Для принятия изменений требуется монопольный доступ к базе")
+			EndIf
 		Else
 			AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
 			AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
@@ -546,7 +553,7 @@ Func RunNonDynamicUpdate()
 		; Успешно применили изменения. Напишем об этом письмо
 		; Формируется сообщение об успешном принятии изменений, которое будет отправлено на Email
 		AddHTMLBodyForEmail("Выполнено обновление базы данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")." )
-		AddHTMLBodyForEmail("Операция выполнена с реструктуризацией")
+		AddHTMLBodyForEmail("Операция выполнена успешно")
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
 			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
 		EndIf
@@ -554,9 +561,6 @@ Func RunNonDynamicUpdate()
 		Return True
 
 	EndIf
-	
-	; Отключить всех пользователей???
-
 EndFunc
 
 ; Функция проверяет необходимость применения изменений
