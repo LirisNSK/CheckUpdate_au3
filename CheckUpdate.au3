@@ -21,6 +21,8 @@ Global	$cPIDFileExt	; Расширение pid-файла
 Global	$sComConnectorObj	; Имя COM-объекта 
 Global	$v8ComConnector, $connDB
 Global	$g_IServerAgentConnection	; Соединение с агентом сервера
+Global	$g_ClusterInfo	; Кластер серверов
+Global	$g_InfoBaseInfo	; Информация об объекте ИБ в кластере серверов
 Global	$sEmailTo, $sEmailCc ; Адреса для доставки сообщений
 Global	$sHTMLBodyForEmail	; HTML-документ для будущего сообщения
 
@@ -238,6 +240,8 @@ Func CreateCOMConnector()
 		If IsObj($v8ComConnector) = 0 Then
 			AddToLog("Ошибка при создании COM-объекта " & $sComConnectorObj)
 			Return False
+		Else
+			Return True
 		EndIf
 	EndIf
 
@@ -261,19 +265,80 @@ EndFunc
 Func ConnectToServerAgent()
 
 	If IsObj($g_IServerAgentConnection) = 1 Then
+		;AddToLog("Соединение с агентом сервера установлено ранее")
 		Return True
 	Else
 		
-		CreateCOMConnector()
-		AddToLog("Подключение к агенту сервера")
+		if Not CreateCOMConnector() Then
+			Return False
+		EndIf
+		
+		AddToLog("Подключение к агенту сервера " & $IBConnectionParam[4])
 		$g_IServerAgentConnection = $v8ComConnector.ConnectAgent($IBConnectionParam[4])
 
 		If IsObj($g_IServerAgentConnection) = 0 Then
 			AddToLog("Ошибка при подключении к агенту сервера" )
 			Return False
+		Else
+			AddToLog("Подключение к агенту сервера установлено")
+			UpdateIBInformation()
+			Return True
 		EndIf
 	EndIf
 	
+EndFunc
+
+;
+Func UpdateIBInformation()
+	
+	Local $lClusters
+	Local $aWorkProcs, $lWorkProc
+	Local $lIBSessions, $vIBSession
+
+	If Not ConnectToServerAgent() Then
+		Return False
+	EndIf
+
+	AddToLog("Получение списка кластеров")
+	$lClusters	= $g_IServerAgentConnection.GetClusters()
+	For $vCurrentClr In $lClusters
+		
+		$g_IServerAgentConnection.Authenticate($vCurrentClr, "", "")
+		
+		AddToLog("Обнаружен кластер " & $vCurrentClr.ClusterName)
+
+		$lInfoBases = $g_IServerAgentConnection.GetInfoBases($vCurrentClr)
+		$mIB	= ""
+		For $vIB In $lInfoBases
+			AddToLog("Обрабатывается ИБ " & $vIB.Name)
+			If $vIB.Name = $IBConnectionParam[3] Then
+				$mIB	= $vIB
+				AddToLog("В кластере " & $vCurrentClr.ClusterName & " найдена база данных " & $IBConnectionParam[3])
+				ExitLoop
+			EndIf
+		Next
+
+		If IsObj($mIB) = 0 Then
+			AddToLog("В кластере " & $vCurrentClr.ClusterName & " база данных " & $IBConnectionParam[3] & " не найдена")
+			Return False
+		EndIf
+
+		$lIBSessions	= $g_IServerAgentConnection.GetInfoBaseSessions($vCurrentClr, $mIB)
+		$mIB	= ""
+		For $vIBSession In $lIBSessions
+			
+			$lSessState	= ($vIBSession.Hibernate) ? " (Спящий)" : " (Активный)"
+			AddToLog("Сеанс " & $vIBSession.SessionID & " пр-ие: " & $vIBSession.AppID & " польз-ль: " & $vIBSession.UserName & $lSessState)
+			If $vIBSession.AppID = "Designer" Then
+				; Обработка Конфигуратора
+			ElseIf $vIBSession.AppID = "BackgroundJob" Then
+				; Обработка Фонового задания
+			ElseIf $vIBSession.AppID = "1CV8" Then
+				; Обработка пользовательского сеанса
+			EndIf
+		Next
+	Next
+
 EndFunc
 
 ; Закрывает соединение с агентом сервера
@@ -624,7 +689,9 @@ AddToLog("=> Старт обработки")
 If ( CanIContinue() ) Then
 	
 	CreatePIDFile()	
-	CheckUpdate()	
+	;CheckUpdate()
+	ConnectToServerAgent()
+	DisconnectFromServerAgent()
 	DeletePIDFile()	
 	AddToLog("<= Обработка завершена");
 	

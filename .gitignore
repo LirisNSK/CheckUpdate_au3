@@ -1,3 +1,4 @@
 CheckUpdate.exe
 CheckUpdate_log.log
 20171123_upd_result.txt
+*.pid
