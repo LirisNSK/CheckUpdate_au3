@@ -281,64 +281,10 @@ Func ConnectToServerAgent()
 			Return False
 		Else
 			AddToLog("Подключение к агенту сервера установлено")
-			UpdateIBInformation()
 			Return True
 		EndIf
 	EndIf
 	
-EndFunc
-
-;
-Func UpdateIBInformation()
-	
-	Local $lClusters
-	Local $aWorkProcs, $lWorkProc
-	Local $lIBSessions, $vIBSession
-
-	If Not ConnectToServerAgent() Then
-		Return False
-	EndIf
-
-	AddToLog("Получение списка кластеров")
-	$lClusters	= $g_IServerAgentConnection.GetClusters()
-	For $vCurrentClr In $lClusters
-		
-		$g_IServerAgentConnection.Authenticate($vCurrentClr, "", "")
-		
-		AddToLog("Обнаружен кластер " & $vCurrentClr.ClusterName)
-
-		$lInfoBases = $g_IServerAgentConnection.GetInfoBases($vCurrentClr)
-		$mIB	= ""
-		For $vIB In $lInfoBases
-			AddToLog("Обрабатывается ИБ " & $vIB.Name)
-			If $vIB.Name = $IBConnectionParam[3] Then
-				$mIB	= $vIB
-				AddToLog("В кластере " & $vCurrentClr.ClusterName & " найдена база данных " & $IBConnectionParam[3])
-				ExitLoop
-			EndIf
-		Next
-
-		If IsObj($mIB) = 0 Then
-			AddToLog("В кластере " & $vCurrentClr.ClusterName & " база данных " & $IBConnectionParam[3] & " не найдена")
-			Return False
-		EndIf
-
-		$lIBSessions	= $g_IServerAgentConnection.GetInfoBaseSessions($vCurrentClr, $mIB)
-		$mIB	= ""
-		For $vIBSession In $lIBSessions
-			
-			$lSessState	= ($vIBSession.Hibernate) ? " (Спящий)" : " (Активный)"
-			AddToLog("Сеанс " & $vIBSession.SessionID & " пр-ие: " & $vIBSession.AppID & " польз-ль: " & $vIBSession.UserName & $lSessState)
-			If $vIBSession.AppID = "Designer" Then
-				; Обработка Конфигуратора
-			ElseIf $vIBSession.AppID = "BackgroundJob" Then
-				; Обработка Фонового задания
-			ElseIf $vIBSession.AppID = "1CV8" Then
-				; Обработка пользовательского сеанса
-			EndIf
-		Next
-	Next
-
 EndFunc
 
 ; Закрывает соединение с агентом сервера
@@ -351,6 +297,81 @@ Func DisconnectFromServerAgent()
 		AddToLog("Ожидание закрытия соединения с агентом сервера")
 	WEnd
 	
+	Return True
+
+EndFunc
+
+Func FindIBInCluster($pClsr)
+	
+	$lInfoBases = $g_IServerAgentConnection.GetInfoBases($pClsr)
+	$pIB	= ""
+	For $vIB In $lInfoBases
+		AddToLog("Обрабатывается ИБ " & $vIB.Name)
+		If $vIB.Name = $IBConnectionParam[3] Then
+			$pIB	= $vIB
+			AddToLog("В кластере " & $pClsr.ClusterName & " найдена база данных " & $IBConnectionParam[3])
+			ExitLoop
+		EndIf
+	Next
+	If IsObj($pIB) = 0 Then
+		AddToLog("В кластере " & $pClsr.ClusterName & " база данных " & $IBConnectionParam[3] & " не найдена")
+		Return $pIB
+	Else
+		Return $pIB
+	EndIf
+
+EndFunc
+
+; Пытается закрыть сеансы ИБ
+Func CheckIBSessionsAndTryTerminate()
+
+	Local $lClusters
+	Local $aWorkProcs, $lWorkProc
+	Local $lIBSessions, $vIBSession
+	
+	If Not ConnectToServerAgent() Then
+		Return False
+	EndIf
+
+	AddToLog("Получение списка кластеров")
+	$lClusters	= $g_IServerAgentConnection.GetClusters()
+	For $vCurrentClr In $lClusters
+		
+		$g_IServerAgentConnection.Authenticate($vCurrentClr, "", "")
+		
+		AddToLog("Обнаружен кластер " & $vCurrentClr.ClusterName)
+
+		$mIB	= FindIBInCluster($vCurrentClr)
+		If IsObj($mIB) = 0 Then
+			Return False
+		EndIf
+
+		$lIBSessions	= $g_IServerAgentConnection.GetInfoBaseSessions($vCurrentClr, $mIB)
+		AddToLog("Начинается обработка активных сеансов ИБ")
+		For $vIBSession In $lIBSessions
+			
+			$lSessState	= ($vIBSession.Hibernate) ? " (Спящий)" : " (Активный)"
+			If $vIBSession.AppID = "Designer" Then
+				AddToLog("Обнаружен активный сеанс Конфигуратора. Продолжение работы скрипта невозможно")
+				AddHTMLBodyForEmail("Обнаружен активный сеанс Конфигуратора. Невозможно применить изменения")
+				Return False
+				ExitLoop
+			ElseIf $vIBSession.AppID = "BackgroundJob" Then
+				; Обработка Фонового задания
+				AddToLog("Сеанс фонового задания " & $vIBSession.SessionID & " пр-ие: " & $vIBSession.AppID & " польз-ль: " & $vIBSession.UserName & $lSessState)
+			ElseIf $vIBSession.AppID = "COMConnection" Then
+				; Обработка COMConnection 
+				AddToLog("Сеанс COMConnection " & $vIBSession.SessionID & " польз-ль: " & $vIBSession.UserName & $lSessState)
+			ElseIf ($vIBSession.AppID = "1CV8") Or ($vIBSession.AppID = "1CV8C") Then
+				; Обработка пользовательского сеанса
+				AddToLog("Закрывается сеанс " & $vIBSession.SessionID & " пр-ие: " & $vIBSession.AppID & " польз-ль: " & $vIBSession.UserName & $lSessState)
+				AddHTMLBodyForEmail("Закрывается сеанс " & $vIBSession.SessionID & " пр-ие: " & $vIBSession.AppID & " польз-ль: " & $vIBSession.UserName & $lSessState)
+				$g_IServerAgentConnection.TerminateSession($vCurrentClr, $vIBSession)
+			EndIf
+		Next
+	Next
+	
+	DisconnectFromServerAgent()
 	Return True
 
 EndFunc
@@ -547,13 +568,10 @@ Func CheckUpdate()
 		$TryCount = $TryCount + 1
 
 		if $connDB.DataBaseConfigurationChangedDynamically() Then
-
-			AddToLog("С момента подключения, Конфигурация ИБ была изменена динамически")
+			AddToLog("С момента подключения Конфигурация ИБ была изменена динамически")
 			AddToLog("Требуется переподключение к базе данных (перезапуск сеанса)")
 			DisconnectFromDatabase()
-
 		Else
-
 			AddToLog("Конфигурация ИБ изменена, требуется применений изменений")
 			AddToLog("Попытка применения изменений")
 			DisconnectFromDatabase()
@@ -561,7 +579,6 @@ Func CheckUpdate()
 			If Not RunNonDynamicUpdate() Then
 				ExitLoop
 			EndIf
-
 		EndIf
 
 		if not ConnectToDataBase() Then
@@ -690,8 +707,7 @@ If ( CanIContinue() ) Then
 	
 	CreatePIDFile()	
 	;CheckUpdate()
-	ConnectToServerAgent()
-	DisconnectFromServerAgent()
+	CheckIBSessionsAndTryTerminate()
 	DeletePIDFile()	
 	AddToLog("<= Обработка завершена");
 	
