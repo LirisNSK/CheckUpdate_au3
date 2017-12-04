@@ -1,7 +1,7 @@
  ; ****************************************************************************
  ;
- ;	Проверка изменения конфигурации узла 1С:УправлениеТорговлей 10.3
- ;	© 2017 Liris 
+ ;	РџСЂРѕРІРµСЂРєР° РёР·РјРµРЅРµРЅРёСЏ РєРѕРЅС„РёРіСѓСЂР°С†РёРё СѓР·Р»Р° 1РЎ:РЈРїСЂР°РІР»РµРЅРёРµРўРѕСЂРіРѕРІР»РµР№ 10.3
+ ;	В© 2017 Liris 
  ;	mailto:liris@ngs.ru
  ;
  ;*****************************************************************************
@@ -11,28 +11,28 @@
 #include <WindowsConstants.au3>
 #NoTrayIcon
 
-Global	$sLogfileName	; Имя log-файла
-Global	$sIBConn		; Строка подключения к ИБ
-Global	$IBConnectionParam	; Параметры подключения к базе данных
-Global	$sV8exePath		; Путь к исполняемому файлу 1cv8.exe
-Global	$sArcLogfileName; Имя архива log-файла
-Global	$iLogMaxSize	; Максимальный размер log-файла
-Global	$cPIDFileExt	; Расширение pid-файла
-Global	$sComConnectorObj	; Имя COM-объекта 
+Global	$sLogfileName	; РРјСЏ log-С„Р°Р№Р»Р°
+Global	$sIBConn		; РЎС‚СЂРѕРєР° РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє РР‘
+Global	$IBConnectionParam	; РџР°СЂР°РјРµС‚СЂС‹ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…
+Global	$sV8exePath		; РџСѓС‚СЊ Рє РёСЃРїРѕР»РЅСЏРµРјРѕРјСѓ С„Р°Р№Р»Сѓ 1cv8.exe
+Global	$sArcLogfileName; РРјСЏ Р°СЂС…РёРІР° log-С„Р°Р№Р»Р°
+Global	$iLogMaxSize	; РњР°РєСЃРёРјР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ log-С„Р°Р№Р»Р°
+Global	$cPIDFileExt	; Р Р°СЃС€РёСЂРµРЅРёРµ pid-С„Р°Р№Р»Р°
+Global	$sComConnectorObj	; РРјСЏ COM-РѕР±СЉРµРєС‚Р° 
 Global	$v8ComConnector, $connDB
-Global	$g_IServerAgentConnection	; Соединение с агентом сервера
-Global	$g_ClusterInfo	; Кластер серверов
-Global	$g_InfoBaseInfo	; Информация об объекте ИБ в кластере серверов
-Global	$sEmailTo, $sEmailCc ; Адреса для доставки сообщений
-Global	$sHTMLBodyForEmail	; HTML-документ для будущего сообщения
-Global	$g_ForceUpdate	; Булево. Истина - отключить пользователей
+Global	$g_IServerAgentConnection	; РЎРѕРµРґРёРЅРµРЅРёРµ СЃ Р°РіРµРЅС‚РѕРј СЃРµСЂРІРµСЂР°
+Global	$g_ClusterInfo	; РљР»Р°СЃС‚РµСЂ СЃРµСЂРІРµСЂРѕРІ
+Global	$g_InfoBaseInfo	; РРЅС„РѕСЂРјР°С†РёСЏ РѕР± РѕР±СЉРµРєС‚Рµ РР‘ РІ РєР»Р°СЃС‚РµСЂРµ СЃРµСЂРІРµСЂРѕРІ
+Global	$sEmailTo, $sEmailCc ; РђРґСЂРµСЃР° РґР»СЏ РґРѕСЃС‚Р°РІРєРё СЃРѕРѕР±С‰РµРЅРёР№
+Global	$sHTMLBodyForEmail	; HTML-РґРѕРєСѓРјРµРЅС‚ РґР»СЏ Р±СѓРґСѓС‰РµРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ
+Global	$g_ForceUpdate	; Р‘СѓР»РµРІРѕ. РСЃС‚РёРЅР° - РѕС‚РєР»СЋС‡РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
 
-; Чтение настроек из ini-файла и разбора параметров командной строки
+; Р§С‚РµРЅРёРµ РЅР°СЃС‚СЂРѕРµРє РёР· ini-С„Р°Р№Р»Р° Рё СЂР°Р·Р±РѕСЂР° РїР°СЂР°РјРµС‚СЂРѕРІ РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРё
 Func ReadParamsFromIni()
 	
 	$sIniFileName	= StringRegExpReplace(@ScriptFullPath, '^(?:.*\\)([^\\]*?)(?:\.[^.]+)?$', '\1')
 	$sIniFileName	= @ScriptDir & "\" & $sIniFileName & ".ini"
-	; Читает из INI-файла параметр 'Key' в секции 'Section'.
+	; Р§РёС‚Р°РµС‚ РёР· INI-С„Р°Р№Р»Р° РїР°СЂР°РјРµС‚СЂ 'Key' РІ СЃРµРєС†РёРё 'Section'.
 	$sLogfileName		= IniRead($sIniFileName,	"EXCHANGE", "LogfileName", "exchange_log.log")
 	$sIBConn			= IniRead($sIniFileName,	"EXCHANGE", "IBConn", "File=D:\Retail;Usr=Admin;Pwd=Admin;")
 	$sV8exePath			= IniRead($sIniFileName,	"EXCHANGE", "V8exePath", """C:\Program Files\1cv83\common\1cestart.exe""" )
@@ -44,24 +44,24 @@ Func ReadParamsFromIni()
 	$sEmailCc			= IniRead($sIniFileName,	"EXCHANGE", "EmailCc", "")
 	$g_ForceUpdate		= False
 
-	; Если успешно прочитали строку соединения, можно ее разобрать на составные части
+	; Р•СЃР»Рё СѓСЃРїРµС€РЅРѕ РїСЂРѕС‡РёС‚Р°Р»Рё СЃС‚СЂРѕРєСѓ СЃРѕРµРґРёРЅРµРЅРёСЏ, РјРѕР¶РЅРѕ РµРµ СЂР°Р·РѕР±СЂР°С‚СЊ РЅР° СЃРѕСЃС‚Р°РІРЅС‹Рµ С‡Р°СЃС‚Рё
 	If StringLen($sIBConn) > 0 Then
 		$IBConnectionParam = SplitConnectionString($sIBConn)
 	EndIf
-	; Чтение параметров командной строки
-	; Параметры, переданные в командной строке имеют приоритет над параметрами ini-файла
+	; Р§С‚РµРЅРёРµ РїР°СЂР°РјРµС‚СЂРѕРІ РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРё
+	; РџР°СЂР°РјРµС‚СЂС‹, РїРµСЂРµРґР°РЅРЅС‹Рµ РІ РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРµ РёРјРµСЋС‚ РїСЂРёРѕСЂРёС‚РµС‚ РЅР°Рґ РїР°СЂР°РјРµС‚СЂР°РјРё ini-С„Р°Р№Р»Р°
 	$iParamCount	= $CmdLine[0]
 	For $iCurrParam = 1 To $iParamCount
 		Select
 			Case StringLower($CmdLine[$iCurrParam]) = StringLower("ForceUpdate")
 				$g_ForceUpdate	= True
-				AddToLog("Задействован ключ ForceUpdate")
+				AddToLog("Р—Р°РґРµР№СЃС‚РІРѕРІР°РЅ РєР»СЋС‡ ForceUpdate")
 		EndSelect
 	Next
 
 EndFunc
 
-; Функции для работы с лог файлом
+; Р¤СѓРЅРєС†РёРё РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ Р»РѕРі С„Р°Р№Р»РѕРј
 ; *****************************************************************************
 
 Func GetTimestampString()
@@ -70,7 +70,7 @@ Func GetTimestampString()
 	Return $sDT
 EndFunc
 
-; Возвращает текущую дату в виде 20171121
+; Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚РµРєСѓС‰СѓСЋ РґР°С‚Сѓ РІ РІРёРґРµ 20171121
 Func GetCurrentDateString()
 	Local $sDT
 	$sDT	= "" & @YEAR & "" & @MON & "" & @MDAY & "" ;
@@ -98,23 +98,23 @@ Func PrepareLogFile()
 		
 		If ($fLogfileSize >= $iLogMaxSize) Then
 		
-			;	Формируем строку для замещения
+			;	Р¤РѕСЂРјРёСЂСѓРµРј СЃС‚СЂРѕРєСѓ РґР»СЏ Р·Р°РјРµС‰РµРЅРёСЏ
 			$sDT	= @YEAR & "_" & @MON & "_" & @MDAY
-			;	Замещаем строку в имени файла
+			;	Р—Р°РјРµС‰Р°РµРј СЃС‚СЂРѕРєСѓ РІ РёРјРµРЅРё С„Р°Р№Р»Р°
 			$sNewFileName	=	StringReplace($sArcLogfileName,"DDMMYYYY", $sDT)
 			$sNewFileName	=	$mCurrFolder & "\" & $sNewFileName
-			;	Перемещаем файл в архив
+			;	РџРµСЂРµРјРµС‰Р°РµРј С„Р°Р№Р» РІ Р°СЂС…РёРІ
 			FileMove($mLogfilePath, $sNewFileName)
-			;	Создаем новый файл лога
+			;	РЎРѕР·РґР°РµРј РЅРѕРІС‹Р№ С„Р°Р№Р» Р»РѕРіР°
 			$fFileLog		=	FileOpen($mLogfilePath, 1)
-			$sWriteToFile	=	GetTimestampString() & "Предыдущий лог перемещен в архив: " & $sNewFileName
+			$sWriteToFile	=	GetTimestampString() & "РџСЂРµРґС‹РґСѓС‰РёР№ Р»РѕРі РїРµСЂРµРјРµС‰РµРЅ РІ Р°СЂС…РёРІ: " & $sNewFileName
 			FileWriteLine($fFileLog, $sWriteToFile)
 			FileClose($fFileLog)
 		EndIf
 
 	Else
 		$fFileLog		=	FileOpen($mLogfilePath, 1)
-		$sWriteToFile	=	GetTimestampString() & "Сформирован новый лог-файл "
+		$sWriteToFile	=	GetTimestampString() & "РЎС„РѕСЂРјРёСЂРѕРІР°РЅ РЅРѕРІС‹Р№ Р»РѕРі-С„Р°Р№Р» "
 		FileWriteLine($fFileLog, $sWriteToFile)
 		FileClose($fFileLog)
 	EndIf
@@ -122,30 +122,30 @@ Func PrepareLogFile()
 EndFunc
 
 ;
-; Функции для работы с процессами
+; Р¤СѓРЅРєС†РёРё РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РїСЂРѕС†РµСЃСЃР°РјРё
 ; *****************************************************************************
 
-; Возвращает PID работающего процесса. Если в текущий момент никакого процесса не запущено, возвращает 0
+; Р’РѕР·РІСЂР°С‰Р°РµС‚ PID СЂР°Р±РѕС‚Р°СЋС‰РµРіРѕ РїСЂРѕС†РµСЃСЃР°. Р•СЃР»Рё РІ С‚РµРєСѓС‰РёР№ РјРѕРјРµРЅС‚ РЅРёРєР°РєРѕРіРѕ РїСЂРѕС†РµСЃСЃР° РЅРµ Р·Р°РїСѓС‰РµРЅРѕ, РІРѕР·РІСЂР°С‰Р°РµС‚ 0
 Func GetLastPID()
 	
 	$mReturn		=	0;
 	$mCurrFolder	=	@ScriptDir;
 	$hSearch		=	FileFindFirstFile($mCurrFolder & "\*." & $cPIDFileExt)
-	; Проверка, является ли поиск успешным
+	; РџСЂРѕРІРµСЂРєР°, СЏРІР»СЏРµС‚СЃСЏ Р»Рё РїРѕРёСЃРє СѓСЃРїРµС€РЅС‹Рј
 	If $hSearch = -1 Then
-		; Ошибка при поиске файлов
-		; Нужно вернуть 0
+		; РћС€РёР±РєР° РїСЂРё РїРѕРёСЃРєРµ С„Р°Р№Р»РѕРІ
+		; РќСѓР¶РЅРѕ РІРµСЂРЅСѓС‚СЊ 0
 		Return 0
 		Exit
 	EndIf	
 	
 	While 1
-		$sFile = FileFindNextFile($hSearch) ; возвращает имя следующего файла, начиная от первого до последнего
+		$sFile = FileFindNextFile($hSearch) ; РІРѕР·РІСЂР°С‰Р°РµС‚ РёРјСЏ СЃР»РµРґСѓСЋС‰РµРіРѕ С„Р°Р№Р»Р°, РЅР°С‡РёРЅР°СЏ РѕС‚ РїРµСЂРІРѕРіРѕ РґРѕ РїРѕСЃР»РµРґРЅРµРіРѕ
 		If @error Then ExitLoop
 		
-		AddToLog("Найден PID-файл: " & $sFile)
+		AddToLog("РќР°Р№РґРµРЅ PID-С„Р°Р№Р»: " & $sFile)
 		$sPID	=	StringReplace($sFile, "." & $cPIDFileExt, "")
-		;AddToLog("Идентификатор процесса: " & $sPID)
+		;AddToLog("РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїСЂРѕС†РµСЃСЃР°: " & $sPID)
 		$mReturn=	Int($sPID)
 	WEnd
 	
@@ -155,21 +155,21 @@ Func GetLastPID()
 	
 EndFunc
 
-; Удаляет все PID-файлы в папке скрипта
+; РЈРґР°Р»СЏРµС‚ РІСЃРµ PID-С„Р°Р№Р»С‹ РІ РїР°РїРєРµ СЃРєСЂРёРїС‚Р°
 Func DeletePIDFile()
 	
-	AddToLog("Попытка удалить PID-файлы в папке: " & @ScriptDir)
+	AddToLog("РџРѕРїС‹С‚РєР° СѓРґР°Р»РёС‚СЊ PID-С„Р°Р№Р»С‹ РІ РїР°РїРєРµ: " & @ScriptDir)
 	$mCurrFolder	=	@ScriptDir;
 	$iResult		=	FileDelete($mCurrFolder & "\*." & $cPIDFileExt)
 	If $iResult > 0 Then
-		AddToLog("PID-файлы удалены успешно")
+		AddToLog("PID-С„Р°Р№Р»С‹ СѓРґР°Р»РµРЅС‹ СѓСЃРїРµС€РЅРѕ")
 	Else
-		AddToLog("При удалении файлов произошла ошибка, либо нет файлов для удаления")
+		AddToLog("РџСЂРё СѓРґР°Р»РµРЅРёРё С„Р°Р№Р»РѕРІ РїСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР°, Р»РёР±Рѕ РЅРµС‚ С„Р°Р№Р»РѕРІ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ")
 	EndIf
 	
 EndFunc
 
-; Создает новый PID-файл
+; РЎРѕР·РґР°РµС‚ РЅРѕРІС‹Р№ PID-С„Р°Р№Р»
 Func CreatePIDFile()
 	
 	$mCurrFolder	=	@ScriptDir;
@@ -180,19 +180,19 @@ Func CreatePIDFile()
 	FileWrite($fFileOut, String($iCurrentPID))
 	FileClose($fFileOut)
 	
-	$sMsg = "Создан новый PID-файл: " & String($iCurrentPID)
+	$sMsg = "РЎРѕР·РґР°РЅ РЅРѕРІС‹Р№ PID-С„Р°Р№Р»: " & String($iCurrentPID)
 	AddToLog($sMsg)
 
 EndFunc	
 
-; Разбирает строку подключения на составляющие
+; Р Р°Р·Р±РёСЂР°РµС‚ СЃС‚СЂРѕРєСѓ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РЅР° СЃРѕСЃС‚Р°РІР»СЏСЋС‰РёРµ
 Func SplitConnectionString($sIBConn)
 	
-	; 0: Тип базы 0 - Файловая, 1 - Клиент-сервер
-	; 1: Имя пользователя
-	; 2: Пароль
-	; 3: Путь к базе данных/Имя базы данных
-	; 4: Имя сервера
+	; 0: РўРёРї Р±Р°Р·С‹ 0 - Р¤Р°Р№Р»РѕРІР°СЏ, 1 - РљР»РёРµРЅС‚-СЃРµСЂРІРµСЂ
+	; 1: РРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+	; 2: РџР°СЂРѕР»СЊ
+	; 3: РџСѓС‚СЊ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…/РРјСЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С…
+	; 4: РРјСЏ СЃРµСЂРІРµСЂР°
 	
 	Local $aResult[5]
 	$aIBParams = StringSplit($sIBConn, ";")
@@ -227,14 +227,14 @@ Func SplitConnectionString($sIBConn)
 EndFunc
 
 ;
-; Функции для работы с кластером
+; Р¤СѓРЅРєС†РёРё РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєР»Р°СЃС‚РµСЂРѕРј
 ; *****************************************************************************
 
-; Создает ServerAgentConnection
+; РЎРѕР·РґР°РµС‚ ServerAgentConnection
 Func ConnectToServerAgent()
 
 	If IsObj($g_IServerAgentConnection) = 1 Then
-		;AddToLog("Соединение с агентом сервера установлено ранее")
+		;AddToLog("РЎРѕРµРґРёРЅРµРЅРёРµ СЃ Р°РіРµРЅС‚РѕРј СЃРµСЂРІРµСЂР° СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ СЂР°РЅРµРµ")
 		Return True
 	Else
 		
@@ -242,28 +242,28 @@ Func ConnectToServerAgent()
 			Return False
 		EndIf
 		
-		AddToLog("Подключение к агенту сервера " & $IBConnectionParam[4])
+		AddToLog("РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р°РіРµРЅС‚Сѓ СЃРµСЂРІРµСЂР° " & $IBConnectionParam[4])
 		$g_IServerAgentConnection = $v8ComConnector.ConnectAgent($IBConnectionParam[4])
 
 		If IsObj($g_IServerAgentConnection) = 0 Then
-			AddToLog("Ошибка при подключении к агенту сервера" )
+			AddToLog("РћС€РёР±РєР° РїСЂРё РїРѕРґРєР»СЋС‡РµРЅРёРё Рє Р°РіРµРЅС‚Сѓ СЃРµСЂРІРµСЂР°" )
 			Return False
 		Else
-			AddToLog("Подключение к агенту сервера установлено")
+			AddToLog("РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р°РіРµРЅС‚Сѓ СЃРµСЂРІРµСЂР° СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ")
 			Return True
 		EndIf
 	EndIf
 	
 EndFunc
 
-; Закрывает соединение с агентом сервера
+; Р—Р°РєСЂС‹РІР°РµС‚ СЃРѕРµРґРёРЅРµРЅРёРµ СЃ Р°РіРµРЅС‚РѕРј СЃРµСЂРІРµСЂР°
 Func DisconnectFromServerAgent()
 
-	AddToLog("Закрывается соединение с агентом сервера")
+	AddToLog("Р—Р°РєСЂС‹РІР°РµС‚СЃСЏ СЃРѕРµРґРёРЅРµРЅРёРµ СЃ Р°РіРµРЅС‚РѕРј СЃРµСЂРІРµСЂР°")
 	While IsObj($g_IServerAgentConnection)
 		$g_IServerAgentConnection	= 0
 		Sleep(1000)
-		AddToLog("Ожидание закрытия соединения с агентом сервера")
+		AddToLog("РћР¶РёРґР°РЅРёРµ Р·Р°РєСЂС‹С‚РёСЏ СЃРѕРµРґРёРЅРµРЅРёСЏ СЃ Р°РіРµРЅС‚РѕРј СЃРµСЂРІРµСЂР°")
 	WEnd
 	
 	Return True
@@ -275,15 +275,15 @@ Func FindIBInCluster($pClsr)
 	$lInfoBases = $g_IServerAgentConnection.GetInfoBases($pClsr)
 	$pIB	= ""
 	For $vIB In $lInfoBases
-		AddToLog("Обрабатывается ИБ " & $vIB.Name)
+		AddToLog("РћР±СЂР°Р±Р°С‚С‹РІР°РµС‚СЃСЏ РР‘ " & $vIB.Name)
 		If $vIB.Name = $IBConnectionParam[3] Then
 			$pIB	= $vIB
-			AddToLog("В кластере " & $pClsr.ClusterName & " найдена база данных " & $IBConnectionParam[3])
+			AddToLog("Р’ РєР»Р°СЃС‚РµСЂРµ " & $pClsr.ClusterName & " РЅР°Р№РґРµРЅР° Р±Р°Р·Р° РґР°РЅРЅС‹С… " & $IBConnectionParam[3])
 			ExitLoop
 		EndIf
 	Next
 	If IsObj($pIB) = 0 Then
-		AddToLog("В кластере " & $pClsr.ClusterName & " база данных " & $IBConnectionParam[3] & " не найдена")
+		AddToLog("Р’ РєР»Р°СЃС‚РµСЂРµ " & $pClsr.ClusterName & " Р±Р°Р·Р° РґР°РЅРЅС‹С… " & $IBConnectionParam[3] & " РЅРµ РЅР°Р№РґРµРЅР°")
 		Return $pIB
 	Else
 		Return $pIB
@@ -291,7 +291,7 @@ Func FindIBInCluster($pClsr)
 
 EndFunc
 
-; Пытается закрыть сеансы ИБ
+; РџС‹С‚Р°РµС‚СЃСЏ Р·Р°РєСЂС‹С‚СЊ СЃРµР°РЅСЃС‹ РР‘
 Func CheckIBSessionsAndTryTerminate()
 
 	Local $lClusters
@@ -302,13 +302,13 @@ Func CheckIBSessionsAndTryTerminate()
 		Return False
 	EndIf
 
-	AddToLog("Получение списка кластеров")
+	AddToLog("РџРѕР»СѓС‡РµРЅРёРµ СЃРїРёСЃРєР° РєР»Р°СЃС‚РµСЂРѕРІ")
 	$lClusters	= $g_IServerAgentConnection.GetClusters()
 	For $vCurrentClr In $lClusters
 		
 		$g_IServerAgentConnection.Authenticate($vCurrentClr, "", "")
 		
-		AddToLog("Обнаружен кластер " & $vCurrentClr.ClusterName)
+		AddToLog("РћР±РЅР°СЂСѓР¶РµРЅ РєР»Р°СЃС‚РµСЂ " & $vCurrentClr.ClusterName)
 
 		$mIB	= FindIBInCluster($vCurrentClr)
 		If IsObj($mIB) = 0 Then
@@ -316,25 +316,25 @@ Func CheckIBSessionsAndTryTerminate()
 		EndIf
 
 		$lIBSessions	= $g_IServerAgentConnection.GetInfoBaseSessions($vCurrentClr, $mIB)
-		AddToLog("Начинается обработка активных сеансов ИБ")
+		AddToLog("РќР°С‡РёРЅР°РµС‚СЃСЏ РѕР±СЂР°Р±РѕС‚РєР° Р°РєС‚РёРІРЅС‹С… СЃРµР°РЅСЃРѕРІ РР‘")
 		For $vIBSession In $lIBSessions
 			
-			$lSessState	= ($vIBSession.Hibernate) ? " (Спящий)" : " (Активный)"
+			$lSessState	= ($vIBSession.Hibernate) ? " (РЎРїСЏС‰РёР№)" : " (РђРєС‚РёРІРЅС‹Р№)"
 			If $vIBSession.AppID = "Designer" Then
-				AddToLog("Обнаружен активный сеанс Конфигуратора. Продолжение работы скрипта невозможно")
-				AddHTMLBodyForEmail("Обнаружен активный сеанс Конфигуратора. Невозможно применить изменения")
+				AddToLog("РћР±РЅР°СЂСѓР¶РµРЅ Р°РєС‚РёРІРЅС‹Р№ СЃРµР°РЅСЃ РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂР°. РџСЂРѕРґРѕР»Р¶РµРЅРёРµ СЂР°Р±РѕС‚С‹ СЃРєСЂРёРїС‚Р° РЅРµРІРѕР·РјРѕР¶РЅРѕ")
+				AddHTMLBodyForEmail("РћР±РЅР°СЂСѓР¶РµРЅ Р°РєС‚РёРІРЅС‹Р№ СЃРµР°РЅСЃ РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂР°. РќРµРІРѕР·РјРѕР¶РЅРѕ РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ")
 				Return False
 				ExitLoop
 			ElseIf $vIBSession.AppID = "BackgroundJob" Then
-				; Обработка Фонового задания
-				AddToLog("Сеанс фонового задания " & $vIBSession.SessionID & " пр-ие: " & $vIBSession.AppID & " польз-ль: " & $vIBSession.UserName & $lSessState)
+				; РћР±СЂР°Р±РѕС‚РєР° Р¤РѕРЅРѕРІРѕРіРѕ Р·Р°РґР°РЅРёСЏ
+				AddToLog("РЎРµР°РЅСЃ С„РѕРЅРѕРІРѕРіРѕ Р·Р°РґР°РЅРёСЏ " & $vIBSession.SessionID & " РїСЂ-РёРµ: " & $vIBSession.AppID & " РїРѕР»СЊР·-Р»СЊ: " & $vIBSession.UserName & $lSessState)
 			ElseIf $vIBSession.AppID = "COMConnection" Then
-				; Обработка COMConnection 
-				AddToLog("Сеанс COMConnection " & $vIBSession.SessionID & " польз-ль: " & $vIBSession.UserName & $lSessState)
+				; РћР±СЂР°Р±РѕС‚РєР° COMConnection 
+				AddToLog("РЎРµР°РЅСЃ COMConnection " & $vIBSession.SessionID & " РїРѕР»СЊР·-Р»СЊ: " & $vIBSession.UserName & $lSessState)
 			ElseIf ($vIBSession.AppID = "1CV8") Or ($vIBSession.AppID = "1CV8C") Then
-				; Обработка пользовательского сеанса
-				AddToLog("Закрывается сеанс " & $vIBSession.SessionID & " пр-ие: " & $vIBSession.AppID & " польз-ль: " & $vIBSession.UserName & $lSessState)
-				AddHTMLBodyForEmail("Закрывается сеанс " & $vIBSession.SessionID & " пр-ие: " & $vIBSession.AppID & " польз-ль: " & $vIBSession.UserName & $lSessState)
+				; РћР±СЂР°Р±РѕС‚РєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРѕРіРѕ СЃРµР°РЅСЃР°
+				AddToLog("Р—Р°РєСЂС‹РІР°РµС‚СЃСЏ СЃРµР°РЅСЃ " & $vIBSession.SessionID & " РїСЂ-РёРµ: " & $vIBSession.AppID & " РїРѕР»СЊР·-Р»СЊ: " & $vIBSession.UserName & $lSessState)
+				AddHTMLBodyForEmail("Р—Р°РєСЂС‹РІР°РµС‚СЃСЏ СЃРµР°РЅСЃ " & $vIBSession.SessionID & " РїСЂ-РёРµ: " & $vIBSession.AppID & " РїРѕР»СЊР·-Р»СЊ: " & $vIBSession.UserName & $lSessState)
 				$g_IServerAgentConnection.TerminateSession($vCurrentClr, $vIBSession)
 			EndIf
 		Next
@@ -346,21 +346,21 @@ Func CheckIBSessionsAndTryTerminate()
 EndFunc
 
 ;
-; Функции для работы с базой данных
+; Р¤СѓРЅРєС†РёРё РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С…
 ; *****************************************************************************
 
-; Создает COMConnector
+; РЎРѕР·РґР°РµС‚ COMConnector
 Func CreateCOMConnector()
 
 	If IsObj($v8ComConnector) = 1 Then
 		Return True
 	Else
-		AddToLog("Создается новый объект COMConnector")
+		AddToLog("РЎРѕР·РґР°РµС‚СЃСЏ РЅРѕРІС‹Р№ РѕР±СЉРµРєС‚ COMConnector")
 		
 		$v8ComConnector = ObjCreate($sComConnectorObj)
 
 		If IsObj($v8ComConnector) = 0 Then
-			AddToLog("Ошибка при создании COM-объекта " & $sComConnectorObj)
+			AddToLog("РћС€РёР±РєР° РїСЂРё СЃРѕР·РґР°РЅРёРё COM-РѕР±СЉРµРєС‚Р° " & $sComConnectorObj)
 			Return False
 		Else
 			Return True
@@ -369,26 +369,26 @@ Func CreateCOMConnector()
 
 EndFunc
 
-; Уничтожает COMConnector
+; РЈРЅРёС‡С‚РѕР¶Р°РµС‚ COMConnector
 Func DestroyCOMConnector()
 
-	AddToLog("Уничтожается объект COMConnector")
+	AddToLog("РЈРЅРёС‡С‚РѕР¶Р°РµС‚СЃСЏ РѕР±СЉРµРєС‚ COMConnector")
 	While IsObj($v8ComConnector)
 		$v8ComConnector	= 0
 		Sleep(1000)
-		AddToLog("Ожидание освобождения памяти от объекта COMConnector")
+		AddToLog("РћР¶РёРґР°РЅРёРµ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РїР°РјСЏС‚Рё РѕС‚ РѕР±СЉРµРєС‚Р° COMConnector")
 	WEnd
 
 	Return True
 
 EndFunc
 
-; Устанавлиает подключение к базе данных
+; РЈСЃС‚Р°РЅР°РІР»РёР°РµС‚ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…
 Func ConnectToDataBase()
 	
 	Local $mv8exe
 
-	AddToLog("Попытка установить подключение с базой данных")
+	AddToLog("РџРѕРїС‹С‚РєР° СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РїРѕРґРєР»СЋС‡РµРЅРёРµ СЃ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С…")
 	
 	If IsObj($connDB) = 1 Then
 		Return True
@@ -398,17 +398,17 @@ Func ConnectToDataBase()
 			Return False
 		EndIf
 
-		AddToLog("Подключение к ИБ")
+		AddToLog("РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє РР‘")
 		$connDB	=	$v8ComConnector.Connect($sIBConn)
 
 		If IsObj($connDB) = 0 Then
-			AddToLog("При подключении к ИБ произошла ошибка")
+			AddToLog("РџСЂРё РїРѕРґРєР»СЋС‡РµРЅРёРё Рє РР‘ РїСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР°")
 			Return False
 		Else
-			AddToLog("Подключение к ИБ установлено")
-			; Выяснить путь к исполняемому файлу текущей версии Платформы
+			AddToLog("РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє РР‘ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ")
+			; Р’С‹СЏСЃРЅРёС‚СЊ РїСѓС‚СЊ Рє РёСЃРїРѕР»РЅСЏРµРјРѕРјСѓ С„Р°Р№Р»Сѓ С‚РµРєСѓС‰РµР№ РІРµСЂСЃРёРё РџР»Р°С‚С„РѕСЂРјС‹
 			$mv8exe	= $connDB.BinDir() & "1cv8.exe"
-			AddToLog("Путь к v8exe: " & $mv8exe)
+			AddToLog("РџСѓС‚СЊ Рє v8exe: " & $mv8exe)
 
 			Return True
 		EndIf
@@ -416,21 +416,21 @@ Func ConnectToDataBase()
 
 EndFunc
 
-; Закрывает соединение с базой данных и уничтожает COM-объект
+; Р—Р°РєСЂС‹РІР°РµС‚ СЃРѕРµРґРёРЅРµРЅРёРµ СЃ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С… Рё СѓРЅРёС‡С‚РѕР¶Р°РµС‚ COM-РѕР±СЉРµРєС‚
 Func DisconnectFromDatabase()
 
-	AddToLog("Закрывается соединение с базой данных")
+	AddToLog("Р—Р°РєСЂС‹РІР°РµС‚СЃСЏ СЃРѕРµРґРёРЅРµРЅРёРµ СЃ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С…")
 	While IsObj($connDB)
 		$connDB	= 0
 		Sleep(1000)
-		AddToLog("Ожидание закрытия соединения с базой данных")
+		AddToLog("РћР¶РёРґР°РЅРёРµ Р·Р°РєСЂС‹С‚РёСЏ СЃРѕРµРґРёРЅРµРЅРёСЏ СЃ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С…")
 	WEnd
 	
 	Return True
 
 EndFunc
 
-; Функция формирует строку для запуска Конфигуратора и запускает его
+; Р¤СѓРЅРєС†РёСЏ С„РѕСЂРјРёСЂСѓРµС‚ СЃС‚СЂРѕРєСѓ РґР»СЏ Р·Р°РїСѓСЃРєР° РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂР° Рё Р·Р°РїСѓСЃРєР°РµС‚ РµРіРѕ
 Func RunDesignerForUpdate()
 
 	;v8exe & " DESIGNER /F" & $sIBPath  & " /N" & IBAdminName & " /P" & IBAdminPwd & " /WA- /UpdateDBCfg /Out" & $ServiceFileName & " -NoTruncate /DisableStartupMessages"
@@ -440,13 +440,13 @@ Func RunDesignerForUpdate()
 
 	$sServiceFileName	=	@ScriptDir & "\" & GetCurrentDateString() & "_upd_result.txt" 
 	
-	; Получаю параметры подключения из строки подключения
+	; РџРѕР»СѓС‡Р°СЋ РїР°СЂР°РјРµС‚СЂС‹ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РёР· СЃС‚СЂРѕРєРё РїРѕРґРєР»СЋС‡РµРЅРёСЏ
 	$sIBAdmin	=	$IBConnectionParam[1]
 	$sIBAdminPwd=	$IBConnectionParam[2]
 	$sIBPath	=	$IBConnectionParam[3]
 	$sIBSrvr	=	$IBConnectionParam[4]
 	
-	; Формирование строки для запуска Конфигуратора
+	; Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ СЃС‚СЂРѕРєРё РґР»СЏ Р·Р°РїСѓСЃРєР° РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂР°
 	If $IBConnectionParam[0] = 0 Then
 		$sUpdCmdLine	=	$sV8exePath & " DESIGNER /F" & $sIBPath  & " /N" & $sIBAdminPwd & " /P" & $sIBAdminPwd 
 	Else
@@ -455,62 +455,62 @@ Func RunDesignerForUpdate()
 	
 	$sUpdCmdLine	=	$sUpdCmdLine & " /WA- /UpdateDBCfg /Out""" & $sServiceFileName & """ -NoTruncate /DisableStartupMessages"
 	
-	; Принятие изменений
-	AddToLog("Запуск Конфигуратора для принятия изменений")
+	; РџСЂРёРЅСЏС‚РёРµ РёР·РјРµРЅРµРЅРёР№
+	AddToLog("Р—Р°РїСѓСЃРє РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂР° РґР»СЏ РїСЂРёРЅСЏС‚РёСЏ РёР·РјРµРЅРµРЅРёР№")
 	
 	$PIDUpdCfg	= Run($sUpdCmdLine)
 	
 	If $PIDUpdCfg = 0 Then
-		AddToLog("Ошибка при выполнении команды")
-		AddToLog("Командная строка: " & $sUpdCmdLine)
+		AddToLog("РћС€РёР±РєР° РїСЂРё РІС‹РїРѕР»РЅРµРЅРёРё РєРѕРјР°РЅРґС‹")
+		AddToLog("РљРѕРјР°РЅРґРЅР°СЏ СЃС‚СЂРѕРєР°: " & $sUpdCmdLine)
 		Return False
 	Else
-		AddToLog("Запущен процесс " & $PIDUpdCfg)
+		AddToLog("Р—Р°РїСѓС‰РµРЅ РїСЂРѕС†РµСЃСЃ " & $PIDUpdCfg)
 	EndIf
 
 	$ProcResult = ProcessWaitClose($PIDUpdCfg)
 	
-	; Возвращает 1 и устанавливает значение @extended равным коду выхода процесса
+	; Р’РѕР·РІСЂР°С‰Р°РµС‚ 1 Рё СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ Р·РЅР°С‡РµРЅРёРµ @extended СЂР°РІРЅС‹Рј РєРѕРґСѓ РІС‹С…РѕРґР° РїСЂРѕС†РµСЃСЃР°
 	If $ProcResult = 1 Then
 		$iCfgErrCode	= @extended
-		AddToLog("Конфигуратор успешно завершил работу с кодом = " & $iCfgErrCode)
-		; Если Конфигуратор вернул результат = 1, значит команда не выполнена
+		AddToLog("РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂ СѓСЃРїРµС€РЅРѕ Р·Р°РІРµСЂС€РёР» СЂР°Р±РѕС‚Сѓ СЃ РєРѕРґРѕРј = " & $iCfgErrCode)
+		; Р•СЃР»Рё РљРѕРЅС„РёРіСѓСЂР°С‚РѕСЂ РІРµСЂРЅСѓР» СЂРµР·СѓР»СЊС‚Р°С‚ = 1, Р·РЅР°С‡РёС‚ РєРѕРјР°РЅРґР° РЅРµ РІС‹РїРѕР»РЅРµРЅР°
 		If $iCfgErrCode = 1 Then
-			AddToLog("Код " & $iCfgErrCode & " означает ошибку принятия изменений")
+			AddToLog("РљРѕРґ " & $iCfgErrCode & " РѕР·РЅР°С‡Р°РµС‚ РѕС€РёР±РєСѓ РїСЂРёРЅСЏС‚РёСЏ РёР·РјРµРЅРµРЅРёР№")
 			Return False
 		Else
 			Return True
 		EndIf
 		
 	Else
-		AddToLog("Команда завершилась ошибкой.")
+		AddToLog("РљРѕРјР°РЅРґР° Р·Р°РІРµСЂС€РёР»Р°СЃСЊ РѕС€РёР±РєРѕР№.")
 		Return False
 	EndIf
 		
 EndFunc
 
-; Функция пытается применить изменения динамически
+; Р¤СѓРЅРєС†РёСЏ РїС‹С‚Р°РµС‚СЃСЏ РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РґРёРЅР°РјРёС‡РµСЃРєРё
 Func RunDynamicUpdate()
 	
 	if Not RunDesignerForUpdate() Then
-		; Если не удалось применить, Написать сообщение о необходимости применить изменения
-		; Формируется сообщение об ошибке, которое будет отправлено на Email
-		AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
-		AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
+		; Р•СЃР»Рё РЅРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРјРµРЅРёС‚СЊ, РќР°РїРёСЃР°С‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ Рѕ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ
+		; Р¤РѕСЂРјРёСЂСѓРµС‚СЃСЏ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± РѕС€РёР±РєРµ, РєРѕС‚РѕСЂРѕРµ Р±СѓРґРµС‚ РѕС‚РїСЂР°РІР»РµРЅРѕ РЅР° Email
+		AddHTMLBodyForEmail("РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РґРёРЅР°РјРёС‡РµСЃРєРё.")
+		AddHTMLBodyForEmail("Р‘Р°Р·Р° РґР°РЅРЅС‹С… " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
 
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
-			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
+			AddToLog("РџРѕРґРіРѕС‚РѕРІРєР° СЌР»РµРєС‚СЂРѕРЅРЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ Р·Р°РІРµСЂС€РёР»Р°СЃСЊ РѕС€РёР±РєРѕР№")
 		EndIf
 		
 		Return False
 
 	Else
-		; Успешно применили изменения. Напишем об этом письмо
-		; Формируется сообщение об успешном принятии изменений, которое будет отправлено на Email
-		AddHTMLBodyForEmail("Выполнено динамическое обновление базы данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")." )
+		; РЈСЃРїРµС€РЅРѕ РїСЂРёРјРµРЅРёР»Рё РёР·РјРµРЅРµРЅРёСЏ. РќР°РїРёС€РµРј РѕР± СЌС‚РѕРј РїРёСЃСЊРјРѕ
+		; Р¤РѕСЂРјРёСЂСѓРµС‚СЃСЏ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± СѓСЃРїРµС€РЅРѕРј РїСЂРёРЅСЏС‚РёРё РёР·РјРµРЅРµРЅРёР№, РєРѕС‚РѕСЂРѕРµ Р±СѓРґРµС‚ РѕС‚РїСЂР°РІР»РµРЅРѕ РЅР° Email
+		AddHTMLBodyForEmail("Р’С‹РїРѕР»РЅРµРЅРѕ РґРёРЅР°РјРёС‡РµСЃРєРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ Р±Р°Р·С‹ РґР°РЅРЅС‹С… " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")." )
 	
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
-			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
+			AddToLog("РџРѕРґРіРѕС‚РѕРІРєР° СЌР»РµРєС‚СЂРѕРЅРЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ Р·Р°РІРµСЂС€РёР»Р°СЃСЊ РѕС€РёР±РєРѕР№")
 		EndIf
 
 		Return True
@@ -519,43 +519,43 @@ Func RunDynamicUpdate()
 	
 EndFunc
 
-; Функция пытается применить изменения с реструктуризацией
+; Р¤СѓРЅРєС†РёСЏ РїС‹С‚Р°РµС‚СЃСЏ РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ СЃ СЂРµСЃС‚СЂСѓРєС‚СѓСЂРёР·Р°С†РёРµР№
 Func RunNonDynamicUpdate()
 	
-	; Попытаться применить изменения
+	; РџРѕРїС‹С‚Р°С‚СЊСЃСЏ РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ
 
 	if Not RunDesignerForUpdate() Then
-		; Если не удалось применить, Написать сообщение о необходимости применить изменения
-		AddToLog("Не удалось применить изменения динамически.")
-		AddToLog("Для принятия изменений требуется реструктуризация или монопольный доступ")
+		; Р•СЃР»Рё РЅРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРјРµРЅРёС‚СЊ, РќР°РїРёСЃР°С‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ Рѕ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ
+		AddToLog("РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РґРёРЅР°РјРёС‡РµСЃРєРё.")
+		AddToLog("Р”Р»СЏ РїСЂРёРЅСЏС‚РёСЏ РёР·РјРµРЅРµРЅРёР№ С‚СЂРµР±СѓРµС‚СЃСЏ СЂРµСЃС‚СЂСѓРєС‚СѓСЂРёР·Р°С†РёСЏ РёР»Рё РјРѕРЅРѕРїРѕР»СЊРЅС‹Р№ РґРѕСЃС‚СѓРї")
 		If $g_ForceUpdate Then
-			AddToLog("Выполняется попытка отключить сеансы")
+			AddToLog("Р’С‹РїРѕР»РЅСЏРµС‚СЃСЏ РїРѕРїС‹С‚РєР° РѕС‚РєР»СЋС‡РёС‚СЊ СЃРµР°РЅСЃС‹")
 			If CheckIBSessionsAndTryTerminate() Then
 				Return True
 			Else
-				AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
-				AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
-				AddHTMLBodyForEmail("Для принятия изменений требуется монопольный доступ к базе")
+				AddHTMLBodyForEmail("РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РґРёРЅР°РјРёС‡РµСЃРєРё.")
+				AddHTMLBodyForEmail("Р‘Р°Р·Р° РґР°РЅРЅС‹С… " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
+				AddHTMLBodyForEmail("Р”Р»СЏ РїСЂРёРЅСЏС‚РёСЏ РёР·РјРµРЅРµРЅРёР№ С‚СЂРµР±СѓРµС‚СЃСЏ РјРѕРЅРѕРїРѕР»СЊРЅС‹Р№ РґРѕСЃС‚СѓРї Рє Р±Р°Р·Рµ")
 			EndIf
 		Else
-			AddHTMLBodyForEmail("Не удалось применить изменения динамически.")
-			AddHTMLBodyForEmail("База данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
-			AddHTMLBodyForEmail("Для принятия изменений требуется монопольный доступ к базе")
+			AddHTMLBodyForEmail("РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРјРµРЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РґРёРЅР°РјРёС‡РµСЃРєРё.")
+			AddHTMLBodyForEmail("Р‘Р°Р·Р° РґР°РЅРЅС‹С… " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")" )
+			AddHTMLBodyForEmail("Р”Р»СЏ РїСЂРёРЅСЏС‚РёСЏ РёР·РјРµРЅРµРЅРёР№ С‚СЂРµР±СѓРµС‚СЃСЏ РјРѕРЅРѕРїРѕР»СЊРЅС‹Р№ РґРѕСЃС‚СѓРї Рє Р±Р°Р·Рµ")
 		EndIf
 		
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
-			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
+			AddToLog("РџРѕРґРіРѕС‚РѕРІРєР° СЌР»РµРєС‚СЂРѕРЅРЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ Р·Р°РІРµСЂС€РёР»Р°СЃСЊ РѕС€РёР±РєРѕР№")
 		EndIf
 		
 		Return False
 
 	Else
-		; Успешно применили изменения. Напишем об этом письмо
-		; Формируется сообщение об успешном принятии изменений, которое будет отправлено на Email
-		AddHTMLBodyForEmail("Выполнено обновление базы данных " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")." )
-		AddHTMLBodyForEmail("Операция выполнена успешно")
+		; РЈСЃРїРµС€РЅРѕ РїСЂРёРјРµРЅРёР»Рё РёР·РјРµРЅРµРЅРёСЏ. РќР°РїРёС€РµРј РѕР± СЌС‚РѕРј РїРёСЃСЊРјРѕ
+		; Р¤РѕСЂРјРёСЂСѓРµС‚СЃСЏ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± СѓСЃРїРµС€РЅРѕРј РїСЂРёРЅСЏС‚РёРё РёР·РјРµРЅРµРЅРёР№, РєРѕС‚РѕСЂРѕРµ Р±СѓРґРµС‚ РѕС‚РїСЂР°РІР»РµРЅРѕ РЅР° Email
+		AddHTMLBodyForEmail("Р’С‹РїРѕР»РЅРµРЅРѕ РѕР±РЅРѕРІР»РµРЅРёРµ Р±Р°Р·С‹ РґР°РЅРЅС‹С… " & $IBConnectionParam[3] & " (" & $IBConnectionParam[4] & ")." )
+		AddHTMLBodyForEmail("РћРїРµСЂР°С†РёСЏ РІС‹РїРѕР»РЅРµРЅР° СѓСЃРїРµС€РЅРѕ")
 		If Not PrepareAndSendEmail($sHTMLBodyForEmail) Then
-			AddToLog("Подготовка электронного сообщения завершилась ошибкой")
+			AddToLog("РџРѕРґРіРѕС‚РѕРІРєР° СЌР»РµРєС‚СЂРѕРЅРЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ Р·Р°РІРµСЂС€РёР»Р°СЃСЊ РѕС€РёР±РєРѕР№")
 		EndIf
 
 		Return True
@@ -563,16 +563,16 @@ Func RunNonDynamicUpdate()
 	EndIf
 EndFunc
 
-; Функция проверяет необходимость применения изменений
+; Р¤СѓРЅРєС†РёСЏ РїСЂРѕРІРµСЂСЏРµС‚ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РїСЂРёРјРµРЅРµРЅРёСЏ РёР·РјРµРЅРµРЅРёР№
 Func CheckUpdate()
 	
 	Local $TryCount
 	
-	; Подключение к базе данных
+	; РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…
 	ConnectToDataBase()
 
-	; Проверяется необходимость обновления конфигурации до процедуры обмена
-	AddToLog("Проверка необходимости принять изменения")
+	; РџСЂРѕРІРµСЂСЏРµС‚СЃСЏ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РѕР±РЅРѕРІР»РµРЅРёСЏ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РґРѕ РїСЂРѕС†РµРґСѓСЂС‹ РѕР±РјРµРЅР°
+	AddToLog("РџСЂРѕРІРµСЂРєР° РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РїСЂРёРЅСЏС‚СЊ РёР·РјРµРЅРµРЅРёСЏ")
 	$TryCount = 0 
 
 	While ($connDB.ConfigurationChanged() = True) AND $TryCount <= 3 
@@ -580,12 +580,12 @@ Func CheckUpdate()
 		$TryCount = $TryCount + 1
 
 		if $connDB.DataBaseConfigurationChangedDynamically() Then
-			AddToLog("С момента подключения Конфигурация ИБ была изменена динамически")
-			AddToLog("Требуется переподключение к базе данных (перезапуск сеанса)")
+			AddToLog("РЎ РјРѕРјРµРЅС‚Р° РїРѕРґРєР»СЋС‡РµРЅРёСЏ РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РР‘ Р±С‹Р»Р° РёР·РјРµРЅРµРЅР° РґРёРЅР°РјРёС‡РµСЃРєРё")
+			AddToLog("РўСЂРµР±СѓРµС‚СЃСЏ РїРµСЂРµРїРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С… (РїРµСЂРµР·Р°РїСѓСЃРє СЃРµР°РЅСЃР°)")
 			DisconnectFromDatabase()
 		Else
-			AddToLog("Конфигурация ИБ изменена, требуется применений изменений")
-			AddToLog("Попытка применения изменений")
+			AddToLog("РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РР‘ РёР·РјРµРЅРµРЅР°, С‚СЂРµР±СѓРµС‚СЃСЏ РїСЂРёРјРµРЅРµРЅРёР№ РёР·РјРµРЅРµРЅРёР№")
+			AddToLog("РџРѕРїС‹С‚РєР° РїСЂРёРјРµРЅРµРЅРёСЏ РёР·РјРµРЅРµРЅРёР№")
 			DisconnectFromDatabase()
 			
 			If Not RunNonDynamicUpdate() Then
@@ -594,7 +594,7 @@ Func CheckUpdate()
 		EndIf
 
 		if not ConnectToDataBase() Then
-			AddToLog("Выход из цикла из-за ошибки подключения к базе данных")
+			AddToLog("Р’С‹С…РѕРґ РёР· С†РёРєР»Р° РёР·-Р·Р° РѕС€РёР±РєРё РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…")
 			ExitLoop
 		EndIf
 
@@ -605,14 +605,14 @@ Func CheckUpdate()
 
 EndFunc
 
-; Возвращает ЛОЖЬ, если нельзя продолжать выполнение скрипта. Запускается всегда вначале программы
+; Р’РѕР·РІСЂР°С‰Р°РµС‚ Р›РћР–Р¬, РµСЃР»Рё РЅРµР»СЊР·СЏ РїСЂРѕРґРѕР»Р¶Р°С‚СЊ РІС‹РїРѕР»РЅРµРЅРёРµ СЃРєСЂРёРїС‚Р°. Р—Р°РїСѓСЃРєР°РµС‚СЃСЏ РІСЃРµРіРґР° РІРЅР°С‡Р°Р»Рµ РїСЂРѕРіСЂР°РјРјС‹
 Func CanIContinue()
 	$mResult	=	False
 	$iLastPID	=	GetLastPID()
 	
 	If ($iLastPID > 0) Then
 		If (ProcessExists($iLastPID)) Then
-			AddToLog("Процесс " & String($iLastPID) & " работает")
+			AddToLog("РџСЂРѕС†РµСЃСЃ " & String($iLastPID) & " СЂР°Р±РѕС‚Р°РµС‚")
 			$mResult	= False
 		Else
 			DeletePIDFile()
@@ -627,23 +627,23 @@ Func CanIContinue()
 EndFunc
 
 ;
-; Функции для работы с электронной почтой
+; Р¤СѓРЅРєС†РёРё РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚РѕР№
 ; *****************************************************************************
 
-; EmailParam - массив
-; 0 - Кому (адреса)
-; 1 - Копия (адреса)
-; 2 - Тема (строка)
-; 3 - Тело сообщения (строка)
+; EmailParam - РјР°СЃСЃРёРІ
+; 0 - РљРѕРјСѓ (Р°РґСЂРµСЃР°)
+; 1 - РљРѕРїРёСЏ (Р°РґСЂРµСЃР°)
+; 2 - РўРµРјР° (СЃС‚СЂРѕРєР°)
+; 3 - РўРµР»Рѕ СЃРѕРѕР±С‰РµРЅРёСЏ (СЃС‚СЂРѕРєР°)
 Func SendEmail($EmailParam)
 
 	Local $EmailMsg
 
-	AddToLog("Подготовка объектов для формирования электронного сообщения")
+	AddToLog("РџРѕРґРіРѕС‚РѕРІРєР° РѕР±СЉРµРєС‚РѕРІ РґР»СЏ С„РѕСЂРјРёСЂРѕРІР°РЅРёСЏ СЌР»РµРєС‚СЂРѕРЅРЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ")
 	$EmailMsg	= ObjCreate("CDO.Message")
 
 	If @error Then
-		AddToLog("Ошибка при создании CDOMessage ")
+		AddToLog("РћС€РёР±РєР° РїСЂРё СЃРѕР·РґР°РЅРёРё CDOMessage ")
 		Return False
 	EndIf
 	
@@ -668,7 +668,7 @@ Func SendEmail($EmailParam)
 	$EmailMsg.Send();
 
 	If @error Then
-		AddToLog("Ошибка при отправке электронного сообщения")
+		AddToLog("РћС€РёР±РєР° РїСЂРё РѕС‚РїСЂР°РІРєРµ СЌР»РµРєС‚СЂРѕРЅРЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ")
 		Return False
 	Else
 		Return True
@@ -676,8 +676,8 @@ Func SendEmail($EmailParam)
 
 EndFunc
 
-; Готовит тело сообщения и отправляет его
-; $EmailMsgTxt - Текст сообщения 
+; Р“РѕС‚РѕРІРёС‚ С‚РµР»Рѕ СЃРѕРѕР±С‰РµРЅРёСЏ Рё РѕС‚РїСЂР°РІР»СЏРµС‚ РµРіРѕ
+; $EmailMsgTxt - РўРµРєСЃС‚ СЃРѕРѕР±С‰РµРЅРёСЏ 
 Func PrepareAndSendEmail($EmailMsgTxt)
 	Local $mEmlParam[4]
 
@@ -687,7 +687,7 @@ Func PrepareAndSendEmail($EmailMsgTxt)
 
 	$mEmlParam[0] = $sEmailTo
 	$mEmlParam[1] = $sEmailCc
-	$mEmlParam[2] = "Автоматическое уведомление об операции над базой данных"
+	$mEmlParam[2] = "РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ СѓРІРµРґРѕРјР»РµРЅРёРµ РѕР± РѕРїРµСЂР°С†РёРё РЅР°Рґ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С…"
 	$mEmlParam[3] = $EmailMsgTxt
 
 	SendEmail($mEmlParam)
@@ -707,24 +707,24 @@ Func AddHTMLBodyForEmail($PlainText)
 	
 EndFunc
 
-; Основная программа
+; РћСЃРЅРѕРІРЅР°СЏ РїСЂРѕРіСЂР°РјРјР°
 ; *****************************************************************************
 
-; Читаем настройки в глобальную переменную
+; Р§РёС‚Р°РµРј РЅР°СЃС‚СЂРѕР№РєРё РІ РіР»РѕР±Р°Р»СЊРЅСѓСЋ РїРµСЂРµРјРµРЅРЅСѓСЋ
 ReadParamsFromIni()
 
-AddToLog("=> Старт обработки")
+AddToLog("=> РЎС‚Р°СЂС‚ РѕР±СЂР°Р±РѕС‚РєРё")
 
 If ( CanIContinue() ) Then
 	
 	CreatePIDFile()	
 	CheckUpdate()
 	DeletePIDFile()	
-	AddToLog("<= Обработка завершена");
+	AddToLog("<= РћР±СЂР°Р±РѕС‚РєР° Р·Р°РІРµСЂС€РµРЅР°");
 	
 else
 
-	AddToLog("Скрипт не может продолжить работу. Условие CanIContinue не выполнилось");
-	AddToLog("<= Скрипт завершает работу");
+	AddToLog("РЎРєСЂРёРїС‚ РЅРµ РјРѕР¶РµС‚ РїСЂРѕРґРѕР»Р¶РёС‚СЊ СЂР°Р±РѕС‚Сѓ. РЈСЃР»РѕРІРёРµ CanIContinue РЅРµ РІС‹РїРѕР»РЅРёР»РѕСЃСЊ");
+	AddToLog("<= РЎРєСЂРёРїС‚ Р·Р°РІРµСЂС€Р°РµС‚ СЂР°Р±РѕС‚Сѓ");
 	
 EndIf
